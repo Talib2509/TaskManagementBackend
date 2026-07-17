@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="Core/TaskMnagementBackend.Aplication/TaskMnagementBackend.Aplication.csproj" Id="85ccb391-a5db-47b5-a27a-96b9d100d60a" />
+  <Project Path="Core/TaskMnagementBackend.Domain/TaskMnagementBackend.Domain.csproj" Id="8e31b652-f5a0-47bf-a620-2f3caac32fdc" />
+  <Project Path="Infrastructure/TaskMnagementBackend.Infrastructure/TaskMnagementBackend.Infrastructure.csproj" Id="50286f2d-c674-41e2-acdc-d0deb491ccc1" />
+  <Project Path="Infrastructure/TaskMnagementBackend.Persistence/TaskMnagementBackend.Persistence.csproj" Id="d4b33dcf-ff2c-455e-b9a4-425f5f801ab7" />
+  <Project Path="Presentation/TaskMnagementBackend.Api/TaskMnagementBackend.Api.csproj" Id="a0c3fbcd-4af6-47b7-947c-949330975a22" />
+</Solution>
