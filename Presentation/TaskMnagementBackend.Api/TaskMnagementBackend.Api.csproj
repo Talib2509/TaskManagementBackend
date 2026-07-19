@@ -7,7 +7,20 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="DotNetEnv" Version="3.2.0" />
+    <PackageReference Include="MediatR" Version="14.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.29" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.29">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\TaskMnagementBackend.Aplication\TaskMnagementBackend.Aplication.csproj" />
+    <ProjectReference Include="..\..\Infrastructure\TaskMnagementBackend.Infrastructure\TaskMnagementBackend.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Infrastructure\TaskMnagementBackend.Persistence\TaskMnagementBackend.Persistence.csproj" />
   </ItemGroup>
 
 </Project>
