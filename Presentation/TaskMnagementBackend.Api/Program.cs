@@ -1,33 +1,46 @@
-    using DotNetEnv;
-    using Microsoft.AspNetCore.Authentication.JwtBearer;
-    using Microsoft.AspNetCore.Identity;
-    using Microsoft.EntityFrameworkCore;
-    using Microsoft.IdentityModel.Tokens;
-    using Microsoft.OpenApi.Models;
-    using System.Text;
-    using TaskMnagementBackend.Domain.Entities.Identity;
-    using TaskMnagementBackend.Infrastructure;
-    using TaskMnagementBackend.Infrastructure.Extension;
-    using TaskMnagementBackend.Persistence;
-    using TaskMnagementBackend.Persistence.Context;
-    using TaskMnagementBackend.Persistence.SeedData;
+using DotNetEnv;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using System.Text;
+using TaskMnagementBackend.Aplication;
+using TaskMnagementBackend.Aplication.Abstraction.Services;
+using TaskMnagementBackend.Domain.Entities.Identity;
+using TaskMnagementBackend.Infrastructure;
+using TaskMnagementBackend.Infrastructure.Extension;
+using TaskMnagementBackend.Infrastructure.Services;
+using TaskMnagementBackend.Persistence;
+using TaskMnagementBackend.Persistence.Context;
+using TaskMnagementBackend.Persistence.SeedData;
 
-    Env.TraversePath().Load();
+Env.TraversePath().Load();
 
-    var builder = WebApplication.CreateBuilder(args);
-
-
-    var connectionString = ResolveRequiredConfigValue(
-        builder.Configuration,
-        "ConnectionStrings:DefaultConnection");
-
-    builder.Services.AddDbContext<AppDbContext>(options =>
-    {
-        options.UseSqlServer(connectionString);
-    });
+var builder = WebApplication.CreateBuilder(args);
 
 
-    builder.Services.AddIdentity<AppUser, AppRole>(options =>
+//var connectionString = ResolveRequiredConfigValue(
+//    builder.Configuration,
+//    "ConnectionStrings:DefaultConnection");
+
+
+var cs = builder.Configuration.GetConnectionString("DefaultConnection");
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+{
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+});
+
+//builder.Services.AddDbContext<ApplicationDbContext>(options =>
+//{
+//    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+//});
+
+
+Console.WriteLine($"ConnectionString = '{cs}'");
+
+builder.Services.AddIdentity<AppUser, AppRole>(options =>
     {
         options.User.RequireUniqueEmail = true;
 
@@ -55,7 +68,13 @@
     IServiceCollection serviceCollection = builder.Services.AddScoped<IPasswordHasher<AppUser>, BCryptPasswordHasher>();
 
 
-    builder.Services.AddAuthentication(options =>
+builder.Services.AddMediatR(cfg =>
+{
+    cfg.RegisterServicesFromAssembly(typeof(ApplicationServiceRegistration).Assembly);
+});
+
+
+builder.Services.AddAuthentication(options =>
     {
         options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
         options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -110,11 +129,11 @@
 
     builder.Services.AddHttpContextAccessor();
 
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddHostedService<OverdueTaskCheckerJob>();
 
 
-
-
-    builder.Services.AddPersistenceServices();
+builder.Services.AddPersistenceServices();
     builder.Services.AddInfrastructureServices();
 
     builder.Services.AddCors(options =>

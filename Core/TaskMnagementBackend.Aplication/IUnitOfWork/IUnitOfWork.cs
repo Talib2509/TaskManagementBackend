@@ -6,8 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TaskMnagementBackend.Domain.Entities.Identity;
 
-namespace TaskMnagementBackend.Aplication.IUnitOfWork
-{
+namespace TaskMnagementBackend.Aplication.IUnitOfWork;
     public interface IUnitOfWork
     {
         UserManager<AppUser> UserManager { get; }
@@ -20,4 +19,4 @@ namespace TaskMnagementBackend.Aplication.IUnitOfWork
         Task CommitAsync(CancellationToken cancellationToken = default);
         Task RollbackAsync(CancellationToken cancellationToken = default);
     }
-}
+
