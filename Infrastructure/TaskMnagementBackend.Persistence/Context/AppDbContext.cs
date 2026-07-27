@@ -17,7 +17,19 @@ namespace TaskMnagementBackend.Persistence.Context
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-         public DbSet<Endpoint> Endpoints { get; set; }
+        public DbSet<Endpoint> Endpoints { get; set; }
+
+        public DbSet<Company> Companies { get; set; }
+
+        public DbSet<Team> Teams { get; set; }
+
+        public DbSet<TeamMember> TeamMembers { get; set; }
+
+        public DbSet<TaskItem> TaskItems { get; set; }
+
+        public DbSet<TeamInvitation> TeamInvitations { get; set; }
+
+        public DbSet<Notification> Notifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

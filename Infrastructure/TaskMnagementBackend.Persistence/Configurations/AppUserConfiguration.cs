@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using TaskMnagementBackend.Domain.Entities;
 using TaskMnagementBackend.Domain.Entities.Identity;
 
 namespace TaskMnagementBackend.Persistence.Configurations
@@ -63,6 +64,13 @@ namespace TaskMnagementBackend.Persistence.Configurations
             // Audit fields (if added to IdentityUser in future)
             // builder.Property(u => u.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
             // builder.Property(u => u.UpdatedAt).HasDefaultValueSql("GETUTCDATE()");
+
+            // Aktiv komanda konteksti (soft reference — komanda silinərsə null-a çəkilir)
+            builder.HasOne<Team>()
+                .WithMany()
+                .HasForeignKey(u => u.ActiveTeamId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
 
             // Concurrency token
             builder.Property(u => u.ConcurrencyStamp)

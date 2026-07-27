@@ -12,13 +12,15 @@ namespace TaskMnagementBackend.Domain.Enums
         public const string Admin = "Admin";
         public const string User = "User";
         public const string TeamLead = "TeamLead";
+        public const string CompanyOwner = "CompanyOwner";
 
         public static readonly string[] All =
         {
             SuperAdmin,
             Admin,
             User,
-            TeamLead
+            TeamLead,
+            CompanyOwner
         };
     }
 }
