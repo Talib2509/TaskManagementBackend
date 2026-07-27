@@ -1,0 +1,17 @@
+using System;
+using TaskMnagementBackend.Domain.Enums;
+
+namespace TaskMnagementBackend.Aplication.DTOs.Notification
+{
+    public class NotificationDto
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string Text { get; set; } = string.Empty;
+        public NotificationType Type { get; set; }
+        public bool IsRead { get; set; }
+        public Guid UserId { get; set; }
+        public int? RelatedEntityId { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+}

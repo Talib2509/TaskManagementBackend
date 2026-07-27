@@ -8,7 +8,8 @@
     using TaskMnagementBackend.Domain.Entities.Identity;
     using TaskMnagementBackend.Infrastructure;
     using TaskMnagementBackend.Infrastructure.Extension;
-    using TaskMnagementBackend.Persistence;
+using TaskMnagementBackend.Infrastructure.Hubs;
+using TaskMnagementBackend.Persistence;
     using TaskMnagementBackend.Persistence.Context;
     using TaskMnagementBackend.Persistence.SeedData;
 
@@ -92,10 +93,7 @@
                 var path = context.HttpContext.Request.Path;
 
                 if (!string.IsNullOrWhiteSpace(accessToken) &&
-                    (
-                        path.StartsWithSegments("/chathub") ||
-                        path.StartsWithSegments("/notificationhub")
-                    ))
+                    path.StartsWithSegments("/notificationhub"))
                 {
                     context.Token = accessToken;
                 }
@@ -218,21 +216,23 @@ builder.Services.AddMemoryCache();
         app.UseSwaggerUI();
     }
 
-    app.UseHttpsRedirection();
+app.UseHttpsRedirection();
 
-    app.UseCors("AllowFrontend");
+app.UseCors("AllowFrontend");
 
-    app.UseAuthentication();
-    app.UseAuthorization();
+app.UseAuthentication();
 
-    app.MapControllers();
+app.UseAuthorization();
 
-
-
-    app.Run();
+app.MapControllers();
 
 
-    static string ResolveRequiredConfigValue(IConfiguration configuration, string key)
+app.MapHub<NotificationHub>("/notificationhub");
+
+app.Run();
+
+
+static string ResolveRequiredConfigValue(IConfiguration configuration, string key)
     {
         var value = configuration[key];
 
