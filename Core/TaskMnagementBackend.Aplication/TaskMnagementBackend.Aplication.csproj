@@ -19,9 +19,7 @@
     <ProjectReference Include="..\TaskMnagementBackend.Domain\TaskMnagementBackend.Domain.csproj" />
   </ItemGroup>
 
-	<ItemGroup>
-		<ProjectReference Include="..\..\TaskMnagementBackend.Persistence\TaskMnagementBackend.Persistence.csproj" />
-	</ItemGroup>
+	
 
 
 </Project>

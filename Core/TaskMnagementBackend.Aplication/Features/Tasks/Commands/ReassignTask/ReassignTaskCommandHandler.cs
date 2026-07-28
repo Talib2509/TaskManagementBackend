@@ -9,8 +9,10 @@ using System.Text;
 using System.Threading.Tasks;
 using TaskMnagementBackend.Aplication.Abstraction.IRepositories;
 using TaskMnagementBackend.Aplication.Abstraction.Services;
+using TaskMnagementBackend.Aplication.DTOs.Notification;
 using TaskMnagementBackend.Domain.Entities;
 using TaskMnagementBackend.Domain.Entities.Task;
+using TaskMnagementBackend.Domain.Enums;
 
 namespace TaskMnagementBackend.Aplication.Features.Tasks.Commands.ReassignTask
 {
@@ -70,19 +72,47 @@ namespace TaskMnagementBackend.Aplication.Features.Tasks.Commands.ReassignTask
             await _assignmentWriteRepository.AddAsync(newAssignment);
             await _assignmentWriteRepository.SaveAsync();
 
+            //// Уведомление старому исполнителю
+            //await _notificationService.CreateAsync(new Notification
+            //{
+            //    UserId = request.OldUserId,
+            //    Message = $"\"{task.Title}\" tapşırığı üzərinizdən götürüldü."
+            //}, cancellationToken);
+
+
             // Уведомление старому исполнителю
-            await _notificationService.CreateAsync(new Notification
+            await _notificationService.CreateNotificationAsync(new CreateNotificationDto
             {
                 UserId = request.OldUserId,
-                Message = $"\"{task.Title}\" tapşırığı üzərinizdən götürüldü."
+                Title = "Tapşırıq yenidən təyin edildi",
+                Text = $"\"{task.Title}\" tapşırığı üzərinizdən götürüldü.",
+                Type = NotificationType.TaskAssigned,
+                RelatedEntityId = request.TaskId 
             }, cancellationToken);
 
+
+
+
+
+
+            //// Уведомление новому исполнителю
+            //await _notificationService.CreateAsync(new Notification
+            //{
+            //    UserId = request.NewUserId,
+            //    Message = $"Sizə yeni tapşırıq təyin olundu: \"{task.Title}\"."
+            //}, cancellationToken);
+
+
             // Уведомление новому исполнителю
-            await _notificationService.CreateAsync(new Notification
+            await _notificationService.CreateNotificationAsync(new CreateNotificationDto
             {
                 UserId = request.NewUserId,
-                Message = $"Sizə yeni tapşırıq təyin olundu: \"{task.Title}\"."
+                Title = "Tapşırıq yenidən təyin edildi",
+                Text = $"Sizə yeni tapşırıq təyin olundu: \"{task.Title}\".",
+                Type = NotificationType.TaskAssigned,
+                RelatedEntityId = request.TaskId
             }, cancellationToken);
+
 
             return new ReassignTaskCommandResponse
             {

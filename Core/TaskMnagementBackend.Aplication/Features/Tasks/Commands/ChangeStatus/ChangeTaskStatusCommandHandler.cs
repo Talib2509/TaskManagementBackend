@@ -4,7 +4,9 @@ using SmartTask.Domain.Entities;
 using System.Security.Claims;
 using TaskMnagementBackend.Aplication.Abstraction.IRepositories;
 using TaskMnagementBackend.Aplication.Abstraction.Services;
+using TaskMnagementBackend.Aplication.DTOs.Notification;
 using TaskMnagementBackend.Domain.Entities;
+using TaskMnagementBackend.Domain.Enums;
 using TaskStatus = TaskMnagementBackend.Domain.Enums.TaskStatus;
 
 
@@ -62,15 +64,18 @@ namespace TaskMnagementBackend.Aplication.Features.Tasks.Commands.ChangeStatus
             var oldStatus = task.Status;
 
             // 1. Обновляем статус задачи
-           
-            
+
+
             // Если новый статус Blocked — уведомляем Team Lead
             if (request.NewStatus == TaskStatus.Blocked)
             {
-                await _notificationService.CreateAsync(new Notification
+                await _notificationService.CreateNotificationAsync(new CreateNotificationDto
                 {
-                    UserId = task.UserId, // Team Lead ID (создатель)
-                    Message = $"TƏCİLİ: \"{task.Title}\" tapşırığı BLOKLANDI!"
+                    UserId = task.UserId,
+                    Title = "TƏCİLİ: Tapşırıq bloklandı!",
+                    Text = $"\"{task.Title}\" tapşırığı BLOKLANDI!",
+                    Type = NotificationType.StatusChange, // Или подходящий тип из вашего enum NotificationType
+                    RelatedEntityId = null
                 }, cancellationToken);
             }
 

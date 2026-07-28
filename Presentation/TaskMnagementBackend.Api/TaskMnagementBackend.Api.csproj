@@ -21,9 +21,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Core\TaskMnagementBackend.Aplication\TaskMnagementBackend.Aplication.csproj" />
     <ProjectReference Include="..\..\Infrastructure\TaskMnagementBackend.Infrastructure\TaskMnagementBackend.Infrastructure.csproj" />
-	  <ProjectReference Include="..\..\Infrastructure\TaskMnagementBackend.Persistence\TaskMnagementBackend.Persistence.csproj" />  
-  
-  
+    <ProjectReference Include="..\..\Infrastructure\TaskMnagementBackend.Persistence\TaskMnagementBackend.Persistence.csproj" />
+	
   </ItemGroup>
 
 </Project>

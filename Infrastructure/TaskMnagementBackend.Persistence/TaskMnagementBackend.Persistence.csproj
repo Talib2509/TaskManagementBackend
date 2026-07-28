@@ -24,5 +24,4 @@
     <ProjectReference Include="..\..\Core\TaskMnagementBackend.Aplication\TaskMnagementBackend.Aplication.csproj" />
     <ProjectReference Include="..\..\Core\TaskMnagementBackend.Domain\TaskMnagementBackend.Domain.csproj" />
   </ItemGroup>
-
 </Project>

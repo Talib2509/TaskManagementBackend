@@ -12,6 +12,12 @@ namespace TaskMnagementBackend.Infrastructure
        
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IEmailService, EmailService>();
+            services.AddScoped<ICompanyService, CompanyService>();
+            services.AddScoped<ITaskItemService, TaskItemService>();
+            services.AddScoped<ITeamService, TeamService>();
+            services.AddScoped<ITeamMemberService, TeamMemberService>();
+            services.AddScoped<ITeamInvitationService, TeamInvitationService>();
+            services.AddScoped<INotificationService, NotificationService>();
             
 
           

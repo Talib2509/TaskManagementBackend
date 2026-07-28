@@ -10,20 +10,20 @@ using TaskMnagementBackend.Aplication.Abstraction.Services;
 using TaskMnagementBackend.Domain.Entities.Identity;
 using TaskMnagementBackend.Infrastructure;
 using TaskMnagementBackend.Infrastructure.Extension;
+using TaskMnagementBackend.Infrastructure.Hubs;
 using TaskMnagementBackend.Infrastructure.Services;
 using TaskMnagementBackend.Persistence;
 using TaskMnagementBackend.Persistence.Context;
 using TaskMnagementBackend.Persistence.SeedData;
 
+
 Env.TraversePath().Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
-
 //var connectionString = ResolveRequiredConfigValue(
 //    builder.Configuration,
 //    "ConnectionStrings:DefaultConnection");
-
 
 var cs = builder.Configuration.GetConnectionString("DefaultConnection");
 
@@ -37,10 +37,10 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 //    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
 //});
 
-
 Console.WriteLine($"ConnectionString = '{cs}'");
 
-builder.Services.AddIdentity<AppUser, AppRole>(options =>
+builder
+    .Services.AddIdentity<AppUser, AppRole>(options =>
     {
         options.User.RequireUniqueEmail = true;
 
@@ -59,22 +59,23 @@ builder.Services.AddIdentity<AppUser, AppRole>(options =>
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 
-    builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
-    {
-        options.TokenLifespan = TimeSpan.FromHours(2);
-    });
+builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
+{
+    options.TokenLifespan = TimeSpan.FromHours(2);
+});
 
-
-    IServiceCollection serviceCollection = builder.Services.AddScoped<IPasswordHasher<AppUser>, BCryptPasswordHasher>();
-
+IServiceCollection serviceCollection = builder.Services.AddScoped<
+    IPasswordHasher<AppUser>,
+    BCryptPasswordHasher
+>();
 
 builder.Services.AddMediatR(cfg =>
 {
     cfg.RegisterServicesFromAssembly(typeof(ApplicationServiceRegistration).Assembly);
 });
 
-
-builder.Services.AddAuthentication(options =>
+builder
+    .Services.AddAuthentication(options =>
     {
         options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
         options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -96,12 +97,11 @@ builder.Services.AddAuthentication(options =>
             ValidIssuer = issuer,
             ValidAudience = audience,
 
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(secretKey)),
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
 
             RoleClaimType = System.Security.Claims.ClaimTypes.Role,
 
-            ClockSkew = TimeSpan.Zero
+            ClockSkew = TimeSpan.Zero,
         };
         options.Events = new JwtBearerEvents
         {
@@ -110,79 +110,70 @@ builder.Services.AddAuthentication(options =>
                 var accessToken = context.Request.Query["access_token"];
                 var path = context.HttpContext.Request.Path;
 
-                if (!string.IsNullOrWhiteSpace(accessToken) &&
-                    (
-                        path.StartsWithSegments("/chathub") ||
-                        path.StartsWithSegments("/notificationhub")
-                    ))
+                if (
+                    !string.IsNullOrWhiteSpace(accessToken)
+                    && path.StartsWithSegments("/notificationhub")
+                )
                 {
                     context.Token = accessToken;
                 }
 
                 return Task.CompletedTask;
-            }
+            },
         };
     });
 
-    builder.Services.AddAuthorization();
+builder.Services.AddAuthorization();
 
-
-    builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddHostedService<OverdueTaskCheckerJob>();
 
-
 builder.Services.AddPersistenceServices();
-    builder.Services.AddInfrastructureServices();
+builder.Services.AddInfrastructureServices();
 
-    builder.Services.AddCors(options =>
-    {
-        options.AddPolicy("AllowFrontend", policy =>
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(
+        "AllowFrontend",
+        policy =>
         {
-            policy.AllowAnyOrigin()
-                  .AllowAnyMethod()
-                  .AllowAnyHeader();
-        });
-    });
-
+            policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+        }
+    );
+});
 
 builder.Services.AddControllers();
 
 builder.Services.AddMemoryCache();
 builder.Services.AddSignalR();
 
-
-
-
 builder.Services.AddMemoryCache();
 
-    builder.Services.AddSignalR();
+builder.Services.AddSignalR();
 
+builder.Services.AddEndpointsApiExplorer();
 
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "TaskManagement API", Version = "v1" });
 
-
-    builder.Services.AddEndpointsApiExplorer();
-
-    builder.Services.AddSwaggerGen(c =>
-    {
-        c.SwaggerDoc("v1", new OpenApiInfo
-        {
-            Title = "TaskManagement API",
-            Version = "v1"
-        });
-
-        c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    c.AddSecurityDefinition(
+        "Bearer",
+        new OpenApiSecurityScheme
         {
             Name = "Authorization",
             Type = SecuritySchemeType.Http,
             Scheme = "Bearer",
             BearerFormat = "JWT",
             In = ParameterLocation.Header,
-            Description = "Token daxil et: Bearer {token}"
-        });
+            Description = "Token daxil et: Bearer {token}",
+        }
+    );
 
-        c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    c.AddSecurityRequirement(
+        new OpenApiSecurityRequirement
         {
             {
                 new OpenApiSecurityScheme
@@ -190,77 +181,69 @@ builder.Services.AddMemoryCache();
                     Reference = new OpenApiReference
                     {
                         Type = ReferenceType.SecurityScheme,
-                        Id = "Bearer"
-                    }
+                        Id = "Bearer",
+                    },
                 },
                 Array.Empty<string>()
-            }
-        });
-    });
-
-
-    builder.Services.AddHttpContextAccessor();
-
-
-    var app = builder.Build();
-
-
-
-    using (var scope = app.Services.CreateScope())
-    {
-        var services = scope.ServiceProvider;
-
-        try
-        {
-            var dbContext = services.GetRequiredService<AppDbContext>();
-            await dbContext.Database.MigrateAsync();
-
-            var roleManager = services.GetRequiredService<RoleManager<AppRole>>();
-            var userManager = services.GetRequiredService<UserManager<AppUser>>();
-
-            await SeedData.SeedRolesAsync(roleManager);
-            await SeedData.SeedSuperAdminUserAsync(userManager);
+            },
         }
-        catch (Exception ex)
-        {
-            var logger = services.GetRequiredService<ILogger<Program>>();
-            logger.LogError(ex, "Seed data xətası baş verdi.");
-        }
-    }
+    );
+});
 
+builder.Services.AddHttpContextAccessor();
 
+var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
 
-    if (app.Environment.IsDevelopment())
+    try
     {
-        app.UseSwagger();
-        app.UseSwaggerUI();
+        var dbContext = services.GetRequiredService<AppDbContext>();
+        await dbContext.Database.MigrateAsync();
+
+        var roleManager = services.GetRequiredService<RoleManager<AppRole>>();
+        var userManager = services.GetRequiredService<UserManager<AppUser>>();
+
+        await SeedData.SeedRolesAsync(roleManager);
+        await SeedData.SeedSuperAdminUserAsync(userManager);
     }
-
-    app.UseHttpsRedirection();
-
-    app.UseCors("AllowFrontend");
-
-    app.UseAuthentication();
-    app.UseAuthorization();
-
-    app.MapControllers();
-
-
-
-    app.Run();
-
-
-    static string ResolveRequiredConfigValue(IConfiguration configuration, string key)
+    catch (Exception ex)
     {
-        var value = configuration[key];
-
-        if (string.IsNullOrWhiteSpace(value))
-            throw new Exception($"{key} tapılmadı.");
-
-        var envValue = configuration[value];
-
-        return string.IsNullOrWhiteSpace(envValue)
-            ? value
-            : envValue;
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Seed data xətası baş verdi.");
     }
+}
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseHttpsRedirection();
+
+app.UseCors("AllowFrontend");
+
+app.UseAuthentication();
+
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.MapHub<NotificationHub>("/notificationhub");
+
+app.Run();
+
+static string ResolveRequiredConfigValue(IConfiguration configuration, string key)
+{
+    var value = configuration[key];
+
+    if (string.IsNullOrWhiteSpace(value))
+        throw new Exception($"{key} tapılmadı.");
+
+    var envValue = configuration[value];
+
+    return string.IsNullOrWhiteSpace(envValue) ? value : envValue;
+}

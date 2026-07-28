@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TaskMnagementBackend.Aplication.Abstraction.IRepositories;
 using TaskMnagementBackend.Aplication.Abstraction.Services;
+using TaskMnagementBackend.Aplication.DTOs.Notification;
 using TaskMnagementBackend.Domain.Entities;
 using TaskMnagementBackend.Domain.Entities.Task;
 using TaskMnagementBackend.Domain.Enums;
@@ -85,12 +86,22 @@ namespace TaskMnagementBackend.Aplication.Features.Tasks.Commands.CreateTeamTask
             // Отправка уведомлений назначенным исполнителям
             foreach (var assigneeId in request.AssigneeIds)
             {
-                await _notificationService.CreateAsync(new Notification
+                //await _notificationService.CreateNotificationAsync(new Notification
+                //{
+                //    UserId = assigneeId,
+                //    Message = $"Sizə yeni komanda tapşırığı təyin edildi: \"{task.Title}\""
+                //}, cancellationToken);
+
+
+                // Уведомление старому исполнителю
+                await _notificationService.CreateNotificationAsync(new CreateNotificationDto
                 {
                     UserId = assigneeId,
-                    Message = $"Sizə yeni komanda tapşırığı təyin edildi: \"{task.Title}\""
-                }, cancellationToken);
+                    Title = "Tapşırıq sizə təyin edildi",
+                    Text = $"Sizə yeni komanda tapşırığı təyin edildi: \"{task.Title}\"",
+                    Type = NotificationType.TaskAssigned }, cancellationToken); 
             }
+
 
             return new CreateTeamTaskCommandResponse
             {

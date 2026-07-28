@@ -2,10 +2,13 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Org.BouncyCastle.Asn1.Ocsp;
 using SmartTask.Domain.Entities;
 using TaskMnagementBackend.Aplication.Abstraction.IRepositories;
 using TaskMnagementBackend.Aplication.Abstraction.Services;
+using TaskMnagementBackend.Aplication.DTOs.Notification;
 using TaskMnagementBackend.Domain.Entities;
+using TaskMnagementBackend.Domain.Enums;
 using TaskStatus = TaskMnagementBackend.Domain.Enums.TaskStatus;
 
 namespace TaskMnagementBackend.Infrastructure.Services
@@ -48,11 +51,13 @@ namespace TaskMnagementBackend.Infrastructure.Services
 
                         foreach (var task in overdueTasks)
                         {
-                            await notificationService.CreateAsync(
-                                new Notification
+                            await notificationService.CreateNotificationAsync(
+                                new CreateNotificationDto
                                 {
                                     UserId = task.UserId,
-                                    Message = $"Müddəti keçmiş tapşırıq: \"{task.Title}\" (Son tarix: {task.Deadline:dd.MM.yyyy HH:mm})."
+                                    Title = $"Müddəti keçmiş tapşırıq: \"{task.Title}\" (Son tarix: {task.Deadline:dd.MM.yyyy HH:mm}).",
+                                    Text = $"\"{task.Title}\" tapşırığın vaxtı keçib.",
+                                    Type = NotificationType.StatusChange,
                                 },
                                 stoppingToken);
                         }
