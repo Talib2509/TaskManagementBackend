@@ -17,7 +17,11 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+
     <PackageReference Include="SixLabors.ImageSharp" Version="2.1.9" />
+
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
+
   </ItemGroup>
 
   <ItemGroup>
@@ -25,8 +29,10 @@
     <ProjectReference Include="..\..\Core\TaskMnagementBackend.Domain\TaskMnagementBackend.Domain.csproj" />
   </ItemGroup>
 
+
   <ItemGroup>
     <Folder Include="Migrations\" />
   </ItemGroup>
+
 
 </Project>

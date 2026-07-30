@@ -14,7 +14,11 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+
     <PackageReference Include="SixLabors.ImageSharp" Version="2.1.9" />
+
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
+
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
@@ -22,6 +26,7 @@
     <ProjectReference Include="..\..\Core\TaskMnagementBackend.Aplication\TaskMnagementBackend.Aplication.csproj" />
     <ProjectReference Include="..\..\Infrastructure\TaskMnagementBackend.Infrastructure\TaskMnagementBackend.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Infrastructure\TaskMnagementBackend.Persistence\TaskMnagementBackend.Persistence.csproj" />
+	
   </ItemGroup>
 
 </Project>

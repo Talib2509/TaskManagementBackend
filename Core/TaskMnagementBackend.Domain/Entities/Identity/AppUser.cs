@@ -16,5 +16,6 @@ namespace TaskMnagementBackend.Domain.Entities.Identity
         public DateTime? RefreshTokenEndDate { get; set; }
         public bool IsDeleted { get; set; } = false;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public int? ActiveTeamId { get; set; }
     }
 }
