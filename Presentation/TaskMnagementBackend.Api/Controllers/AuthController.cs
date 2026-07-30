@@ -23,7 +23,7 @@ namespace TaskMnagementBackend.Api.Controllers
 
         [AllowAnonymous]
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+        public async Task<IActionResult> Register([FromForm] RegisterRequest request)
         {
             var response = await _mediator.Send(request);
 
@@ -47,7 +47,7 @@ namespace TaskMnagementBackend.Api.Controllers
 
         [AllowAnonymous]
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequest request)
+        public async Task<IActionResult> Login([FromForm] LoginRequest request)
         {
             var response = await _mediator.Send(request);
 
@@ -59,7 +59,7 @@ namespace TaskMnagementBackend.Api.Controllers
 
         [AllowAnonymous]
         [HttpPost("refresh-token-login")]
-        public async Task<IActionResult> RefreshTokenLogin([FromBody] RefreshTokenLoginRequest request)
+        public async Task<IActionResult> RefreshTokenLogin([FromForm] RefreshTokenLoginRequest request)
         {
             var response = await _mediator.Send(request);
 
@@ -71,7 +71,7 @@ namespace TaskMnagementBackend.Api.Controllers
 
         [AllowAnonymous]
         [HttpPost("forgot-password")]
-        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+        public async Task<IActionResult> ForgotPassword([FromForm] ForgotPasswordRequest request)
         {
             var response = await _mediator.Send(request);
 
@@ -80,7 +80,7 @@ namespace TaskMnagementBackend.Api.Controllers
 
         [AllowAnonymous]
         [HttpPost("reset-password")]
-        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+        public async Task<IActionResult> ResetPassword([FromForm] ResetPasswordRequest request)
         {
             var response = await _mediator.Send(request);
 
