@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using TaskMnagementBackend.Aplication.Abstraction.Services;
 using TaskMnagementBackend.Infrastructure.Services;
+using TaskMnagementBackend.Infrastructure.Services.Storage;
 
 
 namespace TaskMnagementBackend.Infrastructure
@@ -12,9 +13,9 @@ namespace TaskMnagementBackend.Infrastructure
        
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IEmailService, EmailService>();
-            
+            services.AddScoped<IStorageService, LocalDiskStorageService>();
 
-          
+
             return services;
         }
     }

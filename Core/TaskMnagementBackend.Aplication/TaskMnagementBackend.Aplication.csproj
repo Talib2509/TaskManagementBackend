@@ -7,12 +7,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Features\Auth\Queries\" />
-    <Folder Include="DTOs\" />
+    <Compile Remove="Features\Auth\Queries\**" />
+    <EmbeddedResource Remove="Features\Auth\Queries\**" />
+    <None Remove="Features\Auth\Queries\**" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="MediatR" Version="14.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Http.Features" Version="5.0.17" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Common" Version="10.0.10" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="2.1.9" />
   </ItemGroup>
 
   <ItemGroup>
