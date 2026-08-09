@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using System;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -65,7 +65,7 @@ namespace TaskMnagementBackend.Aplication.Features.Commands.CreateComment
                             UserId = mentionedUser.Id,
                             Title = "Yeni Mention",
                             Message = $"Siz bir tapşırığın şərhində mention edildiniz.",
-                            Type = "Mention"
+                            Type = TaskMnagementBackend.Domain.Enums.NotificationType.Mention
                         };
                         await _notificationWriteRepository.AddAsync(notification);
 

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using TaskMnagementBackend.Aplication.Abstraction.Services;
 using TaskMnagementBackend.Aplication.Common.Pagination;
@@ -22,6 +22,16 @@ namespace TaskMnagementBackend.Infrastructure.Services
             _hubContext = hubContext;
         }
 
+        public async Task SendNotificationToUserAsync(string userId, object notification, CancellationToken cancellationToken = default)
+        {
+            await _hubContext.Clients.User(userId).SendAsync("ReceiveNotification", notification, cancellationToken);
+        }
+
+        public async Task SendCommentToTaskGroupAsync(int taskId, object comment, CancellationToken cancellationToken = default)
+        {
+            await _hubContext.Clients.Group($"Task_{taskId}").SendAsync("ReceiveNewComment", comment, cancellationToken);
+        }
+
         public async Task<bool> CreateNotificationAsync(
             CreateNotificationDto dto,
             CancellationToken cancellationToken = default)
@@ -42,7 +52,7 @@ namespace TaskMnagementBackend.Infrastructure.Services
         }
 
         public async Task<NotificationDto?> GetByIdAsync(
-            Guid notificationId,
+            int notificationId,
             Guid userId,
             CancellationToken cancellationToken = default)
         {
@@ -63,7 +73,7 @@ namespace TaskMnagementBackend.Infrastructure.Services
         }
 
         public async Task<bool> SendNotificationAsync(
-            Guid notificationId,
+            int notificationId,
             CancellationToken cancellationToken = default)
         {
             var notification = await _unitOfWork.NotificationReadRepository
@@ -92,7 +102,7 @@ namespace TaskMnagementBackend.Infrastructure.Services
         }
 
         public async Task<bool> MarkAsReadAsync(
-            Guid notificationId,
+            int notificationId,
             Guid userId,
             CancellationToken cancellationToken = default)
         {
@@ -133,7 +143,7 @@ namespace TaskMnagementBackend.Infrastructure.Services
         }
 
         public async Task<bool> DeleteNotificationAsync(
-            Guid notificationId,
+            int notificationId,
             Guid userId,
             CancellationToken cancellationToken = default)
         {
@@ -225,7 +235,7 @@ namespace TaskMnagementBackend.Infrastructure.Services
         }
 
         public async Task<bool> ExistsAsync(
-            Guid notificationId,
+            int notificationId,
             Guid userId,
             CancellationToken cancellationToken = default)
         {

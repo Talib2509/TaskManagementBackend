@@ -24,6 +24,23 @@ namespace TaskMnagementBackend.Persistence.Configurations
                 .HasMaxLength(500)
                 .IsRequired(false);
 
+            builder.Property(u => u.Bio)
+                .HasMaxLength(1000)
+                .IsRequired(false);
+
+            builder.Property(u => u.JobTitle)
+                .HasMaxLength(200)
+                .IsRequired(false);
+
+            builder.Property(u => u.Timezone)
+                .HasMaxLength(100)
+                .HasDefaultValue("Asia/Baku")
+                .IsRequired(false);
+
+            builder.Property(u => u.IsActive)
+                .HasDefaultValue(true)
+                .IsRequired(true);
+
             builder.Property(u => u.CompanyName)
                 .HasMaxLength(255)
                 .IsRequired(true);
@@ -43,7 +60,7 @@ namespace TaskMnagementBackend.Persistence.Configurations
                 .HasMaxLength(256);
 
             builder.Property(u => u.PhoneNumber)
-                .HasMaxLength(20)
+                .HasMaxLength(30)
                 .IsRequired(false);
 
             builder.Property(u => u.PasswordHash)
@@ -61,16 +78,18 @@ namespace TaskMnagementBackend.Persistence.Configurations
             builder.HasIndex(u => u.Email)
                 .HasDatabaseName("IX_AppUsers_Email");
 
-            // Audit fields (if added to IdentityUser in future)
-            // builder.Property(u => u.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
-            // builder.Property(u => u.UpdatedAt).HasDefaultValueSql("GETUTCDATE()");
-
             // Aktiv komanda konteksti (soft reference — komanda silinərsə null-a çəkilir)
             builder.HasOne<Team>()
                 .WithMany()
                 .HasForeignKey(u => u.ActiveTeamId)
                 .OnDelete(DeleteBehavior.SetNull)
                 .IsRequired(false);
+
+            // UserSettings 1-to-1 relationship
+            builder.HasOne(u => u.Settings)
+                .WithOne(s => s.User)
+                .HasForeignKey<UserSettings>(s => s.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // Concurrency token
             builder.Property(u => u.ConcurrencyStamp)

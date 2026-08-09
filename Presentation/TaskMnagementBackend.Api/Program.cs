@@ -1,32 +1,30 @@
 using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
-
-using TaskMnagementBackend.Api.Hubs;
-
+using System.Text.Json;
+using System.Threading.RateLimiting;
 using TaskMnagementBackend.Aplication;
 using TaskMnagementBackend.Aplication.Abstraction.Services;
 using TaskMnagementBackend.Domain.Entities.Identity;
 using TaskMnagementBackend.Infrastructure;
 using TaskMnagementBackend.Infrastructure.Extension;
-
-
+using TaskMnagementBackend.Infrastructure.HealthChecks;
 using TaskMnagementBackend.Infrastructure.Hubs;
 using TaskMnagementBackend.Infrastructure.Services;
-
 using TaskMnagementBackend.Persistence;
 using TaskMnagementBackend.Persistence.Context;
 using TaskMnagementBackend.Persistence.SeedData;
 
-
 Env.TraversePath().Load();
 
 var builder = WebApplication.CreateBuilder(args);
-
 
 var connectionString = ResolveRequiredConfigValue(
     builder.Configuration,
@@ -84,94 +82,13 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = issuer,
         ValidAudience = audience,
 
-//var connectionString = ResolveRequiredConfigValue(
-//    builder.Configuration,
-//    "ConnectionStrings:DefaultConnection");
-
-var cs = builder.Configuration.GetConnectionString("DefaultConnection");
-
-builder.Services.AddDbContext<AppDbContext>(options =>
-{
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
-});
-
-//builder.Services.AddDbContext<ApplicationDbContext>(options =>
-//{
-//    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
-//});
-
-Console.WriteLine($"ConnectionString = '{cs}'");
-
-builder
-    .Services.AddIdentity<AppUser, AppRole>(options =>
-    {
-        options.User.RequireUniqueEmail = true;
-
-
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(secretKey)),
-
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
         RoleClaimType = System.Security.Claims.ClaimTypes.Role,
-
         ClockSkew = TimeSpan.Zero
     };
     options.Events = new JwtBearerEvents
     {
         OnMessageReceived = context =>
-
-        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
-        options.Lockout.MaxFailedAccessAttempts = 5;
-        options.Lockout.AllowedForNewUsers = true;
-    })
-    .AddEntityFrameworkStores<AppDbContext>()
-    .AddDefaultTokenProviders();
-
-builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
-{
-    options.TokenLifespan = TimeSpan.FromHours(2);
-});
-
-IServiceCollection serviceCollection = builder.Services.AddScoped<
-    IPasswordHasher<AppUser>,
-    BCryptPasswordHasher
->();
-
-builder.Services.AddMediatR(cfg =>
-{
-    cfg.RegisterServicesFromAssembly(typeof(ApplicationServiceRegistration).Assembly);
-});
-
-builder
-    .Services.AddAuthentication(options =>
-    {
-        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-    })
-    .AddJwtBearer(options =>
-    {
-        var secretKey = ResolveRequiredConfigValue(builder.Configuration, "JwtSettings:Secret");
-        var issuer = ResolveRequiredConfigValue(builder.Configuration, "JwtSettings:Issuer");
-        var audience = ResolveRequiredConfigValue(builder.Configuration, "JwtSettings:Audience");
-
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-
-            ValidIssuer = issuer,
-            ValidAudience = audience,
-
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
-
-            RoleClaimType = System.Security.Claims.ClaimTypes.Role,
-
-            ClockSkew = TimeSpan.Zero,
-        };
-        options.Events = new JwtBearerEvents
-
         {
             var accessToken = context.Request.Query["access_token"];
             var path = context.HttpContext.Request.Path;
@@ -183,7 +100,6 @@ builder
                     path.StartsWithSegments("/taskhub")
                 ))
             {
-
                 context.Token = accessToken;
             }
 
@@ -193,81 +109,84 @@ builder
 });
 
 builder.Services.AddAuthorization();
-
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddMemoryCache();
 builder.Services.AddSignalR();
 
+// Rate Limiting
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.OnRejected = async (context, token) =>
+    {
+        context.HttpContext.Response.ContentType = "application/json";
+        var responseObj = new
+        {
+            Status = 429,
+            Error = "Too Many Requests",
+            Message = "Sorğu limiti aşıldı. Zəhmət olmasa bir qədər sonra yenidən cəhd edin."
+        };
+        await context.HttpContext.Response.WriteAsync(JsonSerializer.Serialize(responseObj), cancellationToken: token);
+    };
+
+    // Auth endpoints: 10 requests per minute per IP
+    options.AddFixedWindowLimiter("AuthPolicy", opt =>
+    {
+        opt.PermitLimit = 10;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 0;
+    });
+
+    // File upload endpoints: 20 requests per minute
+    options.AddFixedWindowLimiter("UploadPolicy", opt =>
+    {
+        opt.PermitLimit = 20;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 0;
+    });
+
+    // General API endpoints: 100 requests per minute
+    options.AddFixedWindowLimiter("GeneralPolicy", opt =>
+    {
+        opt.PermitLimit = 100;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 2;
+    });
+});
+
+// Health Checks
+builder.Services.AddHealthChecks()
+    .AddCheck<DatabaseHealthCheck>("Database", tags: new[] { "ready", "db" })
+    .AddCheck<StorageHealthCheck>("Storage", tags: new[] { "ready", "storage" })
+    .AddCheck<EmailHealthCheck>("EmailService", tags: new[] { "ready", "email" });
+
+builder.Services.AddApplicationService();
 builder.Services.AddPersistenceServices();
 builder.Services.AddInfrastructureServices();
-builder.Services.AddApplicationService();
+
+builder.Services.AddHostedService<OverdueTaskCheckerJob>();
+builder.Services.AddHostedService<EmailDigestBackgroundService>();
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.SetIsOriginAllowed(_ => true) 
+        policy.SetIsOriginAllowed(_ => true)
               .AllowAnyMethod()
               .AllowAnyHeader()
-              .AllowCredentials(); 
+              .AllowCredentials();
     });
-
-                var accessToken = context.Request.Query["access_token"];
-                var path = context.HttpContext.Request.Path;
-
-                if (
-                    !string.IsNullOrWhiteSpace(accessToken)
-                    && path.StartsWithSegments("/notificationhub")
-                )
-                {
-                    context.Token = accessToken;
-                }
-
-                return Task.CompletedTask;
-            },
-        };
-    });
-
-builder.Services.AddAuthorization();
-
-builder.Services.AddHttpContextAccessor();
-
-builder.Services.AddScoped<INotificationService, NotificationService>();
-builder.Services.AddHostedService<OverdueTaskCheckerJob>();
-
-builder.Services.AddPersistenceServices();
-builder.Services.AddInfrastructureServices();
-
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy(
-        "AllowFrontend",
-        policy =>
-        {
-            policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
-        }
-    );
-
 });
 
 builder.Services.AddControllers();
-builder.Services.AddHostedService<TaskMnagementBackend.Infrastructure.Services.EmailDigestBackgroundService>();
-builder.Services.AddScoped<INotificationService, NotificationService>();
-
-
-builder.Services.AddMemoryCache();
-builder.Services.AddSignalR();
-
-builder.Services.AddMemoryCache();
-
-builder.Services.AddSignalR();
-
-
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(c =>
 {
-
     c.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "TaskManagement API",
@@ -286,31 +205,11 @@ builder.Services.AddSwaggerGen(c =>
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
-
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "TaskManagement API", Version = "v1" });
-
-    c.AddSecurityDefinition(
-        "Bearer",
-        new OpenApiSecurityScheme
-        {
-            Name = "Authorization",
-            Type = SecuritySchemeType.Http,
-            Scheme = "Bearer",
-            BearerFormat = "JWT",
-            In = ParameterLocation.Header,
-            Description = "Token daxil et: Bearer {token}",
-        }
-    );
-
-    c.AddSecurityRequirement(
-        new OpenApiSecurityRequirement
-
         {
             new OpenApiSecurityScheme
             {
                 Reference = new OpenApiReference
                 {
-
                     Type = ReferenceType.SecurityScheme,
                     Id = "Bearer"
                 }
@@ -319,22 +218,6 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
-
-
-                    Reference = new OpenApiReference
-                    {
-                        Type = ReferenceType.SecurityScheme,
-                        Id = "Bearer",
-                    },
-                },
-                Array.Empty<string>()
-            },
-        }
-    );
-});
-
-builder.Services.AddHttpContextAccessor();
-
 
 var app = builder.Build();
 
@@ -366,29 +249,66 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 
 app.UseCors("AllowFrontend");
 
-app.UseAuthentication();
-
-app.UseHttpsRedirection();
-
-app.UseCors("AllowFrontend");
+app.UseRateLimiter();
 
 app.UseAuthentication();
-
 app.UseAuthorization();
 
+// Health Check Endpoints
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = WriteHealthCheckResponse
+});
+
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready"),
+    ResponseWriter = WriteHealthCheckResponse
+});
+
+app.MapHealthChecks("/health/live", new HealthCheckOptions
+{
+    Predicate = _ => false,
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsync("{\"status\":\"Live\"}");
+    }
+});
+
 app.MapControllers();
-
 app.MapHub<NotificationHub>("/notificationhub");
-
-app.MapHub<TaskHub>("/taskhub");
-
+app.MapHub<TaskMnagementBackend.Api.Hubs.TaskHub>("/taskhub");
 
 app.Run();
+
+static async Task WriteHealthCheckResponse(HttpContext context, HealthReport report)
+{
+    context.Response.ContentType = "application/json";
+
+    var response = new
+    {
+        status = report.Status.ToString(),
+        totalDuration = $"{report.TotalDuration.TotalMilliseconds} ms",
+        timestamp = DateTime.UtcNow,
+        entries = report.Entries.Select(e => new
+        {
+            key = e.Key,
+            status = e.Value.Status.ToString(),
+            description = e.Value.Description,
+            duration = $"{e.Value.Duration.TotalMilliseconds} ms",
+            error = e.Value.Exception?.Message
+        })
+    };
+
+    var json = JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true });
+    await context.Response.WriteAsync(json);
+}
 
 static string ResolveRequiredConfigValue(IConfiguration configuration, string key)
 {
@@ -399,12 +319,7 @@ static string ResolveRequiredConfigValue(IConfiguration configuration, string ke
 
     var envValue = configuration[value];
 
-
     return string.IsNullOrWhiteSpace(envValue)
         ? value
         : envValue;
 }
-
-    return string.IsNullOrWhiteSpace(envValue) ? value : envValue;
-}
-

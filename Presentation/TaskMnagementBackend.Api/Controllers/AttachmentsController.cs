@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -32,6 +32,7 @@ namespace TaskMnagementBackend.Api.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("UploadPolicy")]
     public class AttachmentsController : ControllerBase
     {
         private readonly IMediator _mediator;

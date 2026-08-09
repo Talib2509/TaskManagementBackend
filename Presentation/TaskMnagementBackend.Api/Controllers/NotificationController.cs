@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskMnagementBackend.Aplication.Features.Notifications.Commands.CreateNotification;
@@ -26,7 +26,7 @@ namespace TaskMnagementBackend.API.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(Guid id, [FromQuery] Guid userId)
+        public async Task<IActionResult> GetById(int id, [FromQuery] Guid userId)
         {
             var response = await _mediator.Send(new GetNotificationByIdRequest
             {
@@ -125,7 +125,7 @@ namespace TaskMnagementBackend.API.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(Guid id, [FromQuery] Guid userId)
+        public async Task<IActionResult> Delete(int id, [FromQuery] Guid userId)
         {
             var response = await _mediator.Send(new DeleteNotificationRequest
             {

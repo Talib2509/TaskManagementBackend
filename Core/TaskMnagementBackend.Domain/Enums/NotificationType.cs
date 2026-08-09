@@ -1,10 +1,12 @@
-﻿namespace TaskMnagementBackend.Domain.Enums
+namespace TaskMnagementBackend.Domain.Enums
 {
     public enum NotificationType
     {
         Invitation = 0,
         TaskAssigned = 1,
         Comment = 2,
-        StatusChange = 3
+        StatusChange = 3,
+        Mention = 4,
+        Info = 5
     }
 }

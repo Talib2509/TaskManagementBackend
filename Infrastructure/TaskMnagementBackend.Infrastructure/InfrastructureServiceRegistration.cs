@@ -1,8 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using TaskMnagementBackend.Aplication.Abstraction.Services;
 using TaskMnagementBackend.Infrastructure.Services;
 using TaskMnagementBackend.Infrastructure.Services.Storage;
-
 
 namespace TaskMnagementBackend.Infrastructure
 {
@@ -10,12 +9,9 @@ namespace TaskMnagementBackend.Infrastructure
     {
         public static IServiceCollection AddInfrastructureServices(this IServiceCollection services)
         {
-       
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IEmailService, EmailService>();
-
             services.AddScoped<IStorageService, LocalDiskStorageService>();
-
 
             services.AddScoped<ICompanyService, CompanyService>();
             services.AddScoped<ITaskItemService, TaskItemService>();
@@ -23,8 +19,13 @@ namespace TaskMnagementBackend.Infrastructure
             services.AddScoped<ITeamMemberService, TeamMemberService>();
             services.AddScoped<ITeamInvitationService, TeamInvitationService>();
             services.AddScoped<INotificationService, NotificationService>();
-            
 
+            // New services
+            services.AddScoped<IAuditLogService, AuditLogService>();
+            services.AddScoped<IUserProfileService, UserProfileService>();
+            services.AddScoped<IUserSettingsService, UserSettingsService>();
+            services.AddScoped<IDashboardService, DashboardService>();
+            services.AddScoped<IReportService, ReportService>();
 
             return services;
         }

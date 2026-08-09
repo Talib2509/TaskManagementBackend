@@ -5,7 +5,7 @@ namespace TaskMnagementBackend.Aplication.DTOs.Notification
 {
     public class NotificationDto
     {
-        public Guid Id { get; set; } // <--- Измени с int на Guid
+        public int Id { get; set; }
         public string Title { get; set; } = string.Empty;
         public string Text { get; set; } = string.Empty;
         public NotificationType Type { get; set; }

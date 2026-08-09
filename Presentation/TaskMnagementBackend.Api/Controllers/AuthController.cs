@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using TaskMnagementBackend.Aplication.Features.Auth.Commands.ConfirmEmail;
 using TaskMnagementBackend.Aplication.Features.Auth.Commands.ForgotPassword;
 using TaskMnagementBackend.Aplication.Features.Auth.Commands.Login;
@@ -12,6 +13,7 @@ namespace TaskMnagementBackend.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [EnableRateLimiting("AuthPolicy")]
     public class AuthController : ControllerBase
     {
         private readonly IMediator _mediator;
