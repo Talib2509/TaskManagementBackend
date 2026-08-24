@@ -32,7 +32,7 @@ var connectionString = ResolveRequiredConfigValue(
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    options.UseSqlServer(connectionString);
+    options.UseNpgsql(connectionString);
 });
 
 builder.Services.AddIdentity<AppUser, AppRole>(options =>
@@ -243,11 +243,9 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-if (app.Environment.IsDevelopment())
-{
     app.UseSwagger();
     app.UseSwaggerUI();
-}
+
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
@@ -284,6 +282,12 @@ app.MapHealthChecks("/health/live", new HealthCheckOptions
 app.MapControllers();
 app.MapHub<NotificationHub>("/notificationhub");
 app.MapHub<TaskMnagementBackend.Api.Hubs.TaskHub>("/taskhub");
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    dbContext.Database.Migrate();
+}
 
 app.Run();
 

@@ -1,4 +1,8 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="docker-compose.yml" />
+    <File Path="Dockerfile" />
+  </Folder>
   <Project Path="Core/TaskMnagementBackend.Aplication/TaskMnagementBackend.Aplication.csproj" Id="85ccb391-a5db-47b5-a27a-96b9d100d60a" />
   <Project Path="Core/TaskMnagementBackend.Domain/TaskMnagementBackend.Domain.csproj" Id="8e31b652-f5a0-47bf-a620-2f3caac32fdc" />
   <Project Path="Infrastructure/TaskMnagementBackend.Infrastructure/TaskMnagementBackend.Infrastructure.csproj" Id="50286f2d-c674-41e2-acdc-d0deb491ccc1" />
