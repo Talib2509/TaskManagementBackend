@@ -55,6 +55,16 @@ namespace TaskMnagementBackend.Aplication.Features.Auth.Commands.Login
                 };
             }
 
+            // Prevent login for deactivated or deleted users
+            if (!user.IsActive || user.IsDeleted)
+            {
+                return new LoginResponse
+                {
+                    Succeeded = false,
+                    Message = "Hesab deaktiv edilib."
+                };
+            }
+
         
 
             var roles = await _userManager.GetRolesAsync(user);

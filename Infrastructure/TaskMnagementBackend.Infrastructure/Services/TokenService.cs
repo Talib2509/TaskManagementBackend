@@ -13,10 +13,22 @@ namespace TaskMnagementBackend.Infrastructure.Services
     public class TokenService : ITokenService
     {
         private readonly IConfiguration _configuration;
+        private readonly string _secretKey;
+        private readonly string _issuer;
+        private readonly string _audience;
 
         public TokenService(IConfiguration configuration)
         {
             _configuration = configuration;
+            _secretKey = GetConfigValue("JwtSettings:Secret");
+            _issuer = GetConfigValue("JwtSettings:Issuer");
+            _audience = GetConfigValue("JwtSettings:Audience");
+
+            if (_secretKey.Length < 32)
+            {
+                throw new InvalidOperationException(
+                    "JwtSettings:Secret must be at least 32 characters long for HS256.");
+            }
         }
 
         public Task<string> CreateAccessTokenAsync(
@@ -24,10 +36,6 @@ namespace TaskMnagementBackend.Infrastructure.Services
             IList<string> roles,
             DateTime expireDate)
         {
-            var secretKey = GetConfigValue("JwtSettings:Secret");
-            var issuer = GetConfigValue("JwtSettings:Issuer");
-            var audience = GetConfigValue("JwtSettings:Audience");
-
             var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
@@ -43,15 +51,15 @@ namespace TaskMnagementBackend.Infrastructure.Services
             }
 
             var securityKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(secretKey));
+                Encoding.UTF8.GetBytes(_secretKey));
 
             var credentials = new SigningCredentials(
                 securityKey,
                 SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
-                issuer: issuer,
-                audience: audience,
+                issuer: _issuer,
+                audience: _audience,
                 claims: claims,
                 expires: expireDate,
                 signingCredentials: credentials);

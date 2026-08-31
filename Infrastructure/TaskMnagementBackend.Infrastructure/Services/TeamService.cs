@@ -1,5 +1,7 @@
 
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 using TaskMnagementBackend.Aplication.Abstraction.Services;
 using TaskMnagementBackend.Aplication.DTOs.Team;
 using TaskMnagementBackend.Aplication.IUnitOfWork;
@@ -10,10 +12,14 @@ namespace TaskMnagementBackend.Infrastructure.Services
     public class TeamService : ITeamService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IAuditLogService _auditLogService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public TeamService(IUnitOfWork unitOfWork)
+        public TeamService(IUnitOfWork unitOfWork, IAuditLogService auditLogService, IHttpContextAccessor httpContextAccessor)
         {
             _unitOfWork = unitOfWork;
+            _auditLogService = auditLogService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public IQueryable<Team> GetAll()
@@ -92,7 +98,30 @@ namespace TaskMnagementBackend.Infrastructure.Services
 
             _unitOfWork.TeamWriteRepository.Update(entity);
 
-            return await _unitOfWork.SaveChangesAsync() > 0;
+            var res = await _unitOfWork.SaveChangesAsync() > 0;
+
+            if (res)
+            {
+                try
+                {
+                    var user = _httpContextAccessor.HttpContext?.User;
+                    var userIdStr = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user?.FindFirst("UserId")?.Value;
+                    Guid.TryParse(userIdStr, out var uid);
+
+                    await _auditLogService.LogAsync(
+                        action: "TeamDeleted",
+                        entityType: "Team",
+                        entityId: entity.Id.ToString(),
+                        details: $"Team '{entity.Name}' ({entity.Id}) was soft-deleted.",
+                        userId: uid,
+                        userEmail: user?.FindFirst(ClaimTypes.Email)?.Value,
+                        userName: user?.Identity?.Name,
+                        ipAddress: _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString());
+                }
+                catch { }
+            }
+
+            return res;
         }
 
         public async Task<bool> AssignLeadAsync(int teamId, Guid userId)

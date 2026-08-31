@@ -34,6 +34,7 @@ namespace TaskMnagementBackend.Infrastructure.Services
 
         public async Task<PerformanceReportDataDto> GetTeamPerformanceDataAsync(
             int teamId,
+            Guid requestingUserId,
             DateTime? fromDate,
             DateTime? toDate,
             CancellationToken cancellationToken = default)
@@ -46,6 +47,15 @@ namespace TaskMnagementBackend.Infrastructure.Services
 
             if (team == null)
                 throw new Exception("Komanda tapılmadı.");
+
+            // Authorization: only admins, superadmins, company owner or team members can access
+            var requestingUser = await _userManager.FindByIdAsync(requestingUserId.ToString());
+            var isAdmin = requestingUser != null && (await _userManager.IsInRoleAsync(requestingUser, UserRoles.Admin) || await _userManager.IsInRoleAsync(requestingUser, UserRoles.SuperAdmin));
+            var isCompanyOwner = team.Company != null && team.Company.OwnerId == requestingUserId;
+            var isTeamMember = team.TeamMembers.Any(m => m.UserId == requestingUserId && m.IsActive);
+
+            if (!isAdmin && !isCompanyOwner && !isTeamMember)
+                throw new UnauthorizedAccessException("Bu komandanın hesabatına giriş icazəniz yoxdur.");
 
             var query = _dbContext.TaskItems
                 .Include(t => t.AssignedUser)
@@ -124,6 +134,7 @@ namespace TaskMnagementBackend.Infrastructure.Services
 
         public async Task<PerformanceReportDataDto> GetUserPerformanceDataAsync(
             Guid userId,
+            Guid requestingUserId,
             DateTime? fromDate,
             DateTime? toDate,
             CancellationToken cancellationToken = default)
@@ -131,6 +142,29 @@ namespace TaskMnagementBackend.Infrastructure.Services
             var user = await _userManager.FindByIdAsync(userId.ToString());
             if (user == null || user.IsDeleted)
                 throw new Exception("İstifadəçi tapılmadı.");
+
+            // Authorization: allow if the requester is the same user or admin/superadmin.
+            // Additionally, allow a company owner to view reports for users who belong to their company.
+            if (requestingUserId != userId)
+            {
+                var requestingUser = await _userManager.FindByIdAsync(requestingUserId.ToString());
+                var isAdmin = requestingUser != null && (await _userManager.IsInRoleAsync(requestingUser, UserRoles.Admin) || await _userManager.IsInRoleAsync(requestingUser, UserRoles.SuperAdmin));
+
+                if (!isAdmin)
+                {
+                    // Check if requester is owner of a company and the target user belongs to that company
+                    var ownerCompany = await _dbContext.Companies.FirstOrDefaultAsync(c => c.OwnerId == requestingUserId && !c.IsDeleted, cancellationToken);
+                    if (ownerCompany == null)
+                        throw new UnauthorizedAccessException("Bu istifadəçinin hesabatını görmək üçün icazəniz yoxdur.");
+
+                    var isUserInCompany = await _dbContext.TeamMembers
+                        .Include(m => m.Team)
+                        .AnyAsync(m => m.UserId == userId && m.IsActive && m.Team != null && !m.Team.IsDeleted && m.Team.CompanyId == ownerCompany.Id, cancellationToken);
+
+                    if (!isUserInCompany)
+                        throw new UnauthorizedAccessException("Bu istifadəçinin hesabatını görmək üçün icazəniz yoxdur.");
+                }
+            }
 
             var query = _dbContext.TaskItems
                 .Include(t => t.Team)
@@ -186,6 +220,7 @@ namespace TaskMnagementBackend.Infrastructure.Services
 
         public async Task<PerformanceReportDataDto> GetCompanyPerformanceDataAsync(
             int companyId,
+            Guid requestingUserId,
             DateTime? fromDate,
             DateTime? toDate,
             CancellationToken cancellationToken = default)
@@ -201,6 +236,14 @@ namespace TaskMnagementBackend.Infrastructure.Services
 
             if (company == null)
                 throw new Exception("Şirkət tapılmadı.");
+
+            var requestingUser = await _userManager.FindByIdAsync(requestingUserId.ToString());
+            var isAdmin = requestingUser != null &&
+                (await _userManager.IsInRoleAsync(requestingUser, UserRoles.Admin) ||
+                 await _userManager.IsInRoleAsync(requestingUser, UserRoles.SuperAdmin));
+
+            if (!isAdmin && company.OwnerId != requestingUserId)
+                throw new UnauthorizedAccessException("Bu şirkətin hesabatına giriş icazəniz yoxdur.");
 
             var allTasks = company.Teams.SelectMany(t => t.TaskItems).AsQueryable();
 
@@ -597,5 +640,6 @@ namespace TaskMnagementBackend.Infrastructure.Services
             document.GeneratePdf(stream);
             return Task.FromResult(stream.ToArray());
         }
+
     }
 }

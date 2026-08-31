@@ -36,7 +36,8 @@ namespace TaskMnagementBackend.Api.Controllers
             [FromQuery] DateTime? fromDate,
             [FromQuery] DateTime? toDate)
         {
-            var data = await _reportService.GetTeamPerformanceDataAsync(teamId, fromDate, toDate);
+            var requester = GetCurrentUserId();
+            var data = await _reportService.GetTeamPerformanceDataAsync(teamId, requester, fromDate, toDate);
             var fileBytes = await _reportService.ExportExcelAsync(data);
             var fileName = $"Team_{teamId}_Performance_{DateTime.UtcNow:yyyyMMdd}.xlsx";
 
@@ -49,7 +50,8 @@ namespace TaskMnagementBackend.Api.Controllers
             [FromQuery] DateTime? fromDate,
             [FromQuery] DateTime? toDate)
         {
-            var data = await _reportService.GetTeamPerformanceDataAsync(teamId, fromDate, toDate);
+            var requester = GetCurrentUserId();
+            var data = await _reportService.GetTeamPerformanceDataAsync(teamId, requester, fromDate, toDate);
             var fileBytes = await _reportService.ExportPdfAsync(data);
             var fileName = $"Team_{teamId}_Performance_{DateTime.UtcNow:yyyyMMdd}.pdf";
 
@@ -62,7 +64,8 @@ namespace TaskMnagementBackend.Api.Controllers
             [FromQuery] DateTime? fromDate,
             [FromQuery] DateTime? toDate)
         {
-            var data = await _reportService.GetUserPerformanceDataAsync(userId, fromDate, toDate);
+            var requester = GetCurrentUserId();
+            var data = await _reportService.GetUserPerformanceDataAsync(userId, requester, fromDate, toDate);
             var fileBytes = await _reportService.ExportExcelAsync(data);
             var fileName = $"User_{userId}_Performance_{DateTime.UtcNow:yyyyMMdd}.xlsx";
 
@@ -75,7 +78,8 @@ namespace TaskMnagementBackend.Api.Controllers
             [FromQuery] DateTime? fromDate,
             [FromQuery] DateTime? toDate)
         {
-            var data = await _reportService.GetUserPerformanceDataAsync(userId, fromDate, toDate);
+            var requester = GetCurrentUserId();
+            var data = await _reportService.GetUserPerformanceDataAsync(userId, requester, fromDate, toDate);
             var fileBytes = await _reportService.ExportPdfAsync(data);
             var fileName = $"User_{userId}_Performance_{DateTime.UtcNow:yyyyMMdd}.pdf";
 
@@ -88,7 +92,7 @@ namespace TaskMnagementBackend.Api.Controllers
             [FromQuery] DateTime? toDate)
         {
             var userId = GetCurrentUserId();
-            var data = await _reportService.GetUserPerformanceDataAsync(userId, fromDate, toDate);
+            var data = await _reportService.GetUserPerformanceDataAsync(userId, userId, fromDate, toDate);
             var fileBytes = await _reportService.ExportExcelAsync(data);
             var fileName = $"My_Performance_{DateTime.UtcNow:yyyyMMdd}.xlsx";
 
@@ -101,7 +105,7 @@ namespace TaskMnagementBackend.Api.Controllers
             [FromQuery] DateTime? toDate)
         {
             var userId = GetCurrentUserId();
-            var data = await _reportService.GetUserPerformanceDataAsync(userId, fromDate, toDate);
+            var data = await _reportService.GetUserPerformanceDataAsync(userId, userId, fromDate, toDate);
             var fileBytes = await _reportService.ExportPdfAsync(data);
             var fileName = $"My_Performance_{DateTime.UtcNow:yyyyMMdd}.pdf";
 
@@ -114,7 +118,8 @@ namespace TaskMnagementBackend.Api.Controllers
             [FromQuery] DateTime? fromDate,
             [FromQuery] DateTime? toDate)
         {
-            var data = await _reportService.GetCompanyPerformanceDataAsync(companyId, fromDate, toDate);
+            var requester = GetCurrentUserId();
+            var data = await _reportService.GetCompanyPerformanceDataAsync(companyId, requester, fromDate, toDate);
             var fileBytes = await _reportService.ExportExcelAsync(data);
             var fileName = $"Company_{companyId}_Performance_{DateTime.UtcNow:yyyyMMdd}.xlsx";
 
@@ -127,7 +132,8 @@ namespace TaskMnagementBackend.Api.Controllers
             [FromQuery] DateTime? fromDate,
             [FromQuery] DateTime? toDate)
         {
-            var data = await _reportService.GetCompanyPerformanceDataAsync(companyId, fromDate, toDate);
+            var requester = GetCurrentUserId();
+            var data = await _reportService.GetCompanyPerformanceDataAsync(companyId, requester, fromDate, toDate);
             var fileBytes = await _reportService.ExportPdfAsync(data);
             var fileName = $"Company_{companyId}_Performance_{DateTime.UtcNow:yyyyMMdd}.pdf";
 
