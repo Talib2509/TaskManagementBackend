@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 using TaskMnagementBackend.Aplication.Abstraction.Services;
 using TaskMnagementBackend.Aplication.DTOs.TaskItem;
 using TaskMnagementBackend.Aplication.IUnitOfWork;
@@ -10,10 +12,14 @@ namespace TaskMnagementBackend.Infrastructure.Services
     public class TaskItemService : ITaskItemService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IAuditLogService _auditLogService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public TaskItemService(IUnitOfWork unitOfWork)
+        public TaskItemService(IUnitOfWork unitOfWork, IAuditLogService auditLogService, IHttpContextAccessor httpContextAccessor)
         {
             _unitOfWork = unitOfWork;
+            _auditLogService = auditLogService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public IQueryable<TaskItemDto> GetAll()
@@ -103,7 +109,30 @@ namespace TaskMnagementBackend.Infrastructure.Services
 
             await _unitOfWork.TaskItemWriteRepository.AddAsync(entity);
 
-            return await _unitOfWork.SaveChangesAsync() > 0;
+            var res = await _unitOfWork.SaveChangesAsync() > 0;
+
+            if (res)
+            {
+                try
+                {
+                    var user = _httpContextAccessor.HttpContext?.User;
+                    var userIdStr = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user?.FindFirst("UserId")?.Value;
+                    Guid.TryParse(userIdStr, out var uid);
+
+                    await _auditLogService.LogAsync(
+                        action: "TaskCreated",
+                        entityType: "TaskItem",
+                        entityId: entity.Id.ToString(),
+                        details: $"Task '{entity.Title}' ({entity.Id}) created in team {entity.TeamId}.",
+                        userId: uid,
+                        userEmail: user?.FindFirst(ClaimTypes.Email)?.Value,
+                        userName: user?.Identity?.Name,
+                        ipAddress: _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString());
+                }
+                catch { }
+            }
+
+            return res;
         }
 
         public async Task<bool> UpdateAsync(UpdateTaskItemDto dto)
@@ -126,7 +155,30 @@ namespace TaskMnagementBackend.Infrastructure.Services
 
             _unitOfWork.TaskItemWriteRepository.Update(entity);
 
-            return await _unitOfWork.SaveChangesAsync() > 0;
+            var res = await _unitOfWork.SaveChangesAsync() > 0;
+
+            if (res)
+            {
+                try
+                {
+                    var user = _httpContextAccessor.HttpContext?.User;
+                    var userIdStr = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user?.FindFirst("UserId")?.Value;
+                    Guid.TryParse(userIdStr, out var uid);
+
+                    await _auditLogService.LogAsync(
+                        action: "TaskUpdated",
+                        entityType: "TaskItem",
+                        entityId: entity.Id.ToString(),
+                        details: $"Task '{entity.Title}' ({entity.Id}) updated.",
+                        userId: uid,
+                        userEmail: user?.FindFirst(ClaimTypes.Email)?.Value,
+                        userName: user?.Identity?.Name,
+                        ipAddress: _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString());
+                }
+                catch { }
+            }
+
+            return res;
         }
 
         public async Task<bool> DeleteAsync(int id)
@@ -136,7 +188,30 @@ namespace TaskMnagementBackend.Infrastructure.Services
             if (!result)
                 return false;
 
-            return await _unitOfWork.SaveChangesAsync() > 0;
+            var res = await _unitOfWork.SaveChangesAsync() > 0;
+
+            if (res)
+            {
+                try
+                {
+                    var user = _httpContextAccessor.HttpContext?.User;
+                    var userIdStr = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user?.FindFirst("UserId")?.Value;
+                    Guid.TryParse(userIdStr, out var uid);
+
+                    await _auditLogService.LogAsync(
+                        action: "TaskDeleted",
+                        entityType: "TaskItem",
+                        entityId: id.ToString(),
+                        details: $"Task {id} deleted.",
+                        userId: uid,
+                        userEmail: user?.FindFirst(ClaimTypes.Email)?.Value,
+                        userName: user?.Identity?.Name,
+                        ipAddress: _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString());
+                }
+                catch { }
+            }
+
+            return res;
         }
 
         public async Task<bool> ChangeStatusAsync(int id, TaskItemStatus status)
@@ -155,7 +230,30 @@ namespace TaskMnagementBackend.Infrastructure.Services
 
             _unitOfWork.TaskItemWriteRepository.Update(entity);
 
-            return await _unitOfWork.SaveChangesAsync() > 0;
+            var res = await _unitOfWork.SaveChangesAsync() > 0;
+
+            if (res)
+            {
+                try
+                {
+                    var user = _httpContextAccessor.HttpContext?.User;
+                    var userIdStr = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user?.FindFirst("UserId")?.Value;
+                    Guid.TryParse(userIdStr, out var uid);
+
+                    await _auditLogService.LogAsync(
+                        action: "TaskStatusChanged",
+                        entityType: "TaskItem",
+                        entityId: entity.Id.ToString(),
+                        details: $"Task {entity.Id} status changed to {status}.",
+                        userId: uid,
+                        userEmail: user?.FindFirst(ClaimTypes.Email)?.Value,
+                        userName: user?.Identity?.Name,
+                        ipAddress: _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString());
+                }
+                catch { }
+            }
+
+            return res;
         }
 
         public async Task<bool> AssignMemberAsync(int taskId, Guid userId)
@@ -176,7 +274,30 @@ namespace TaskMnagementBackend.Infrastructure.Services
 
             _unitOfWork.TaskItemWriteRepository.Update(entity);
 
-            return await _unitOfWork.SaveChangesAsync() > 0;
+            var res = await _unitOfWork.SaveChangesAsync() > 0;
+
+            if (res)
+            {
+                try
+                {
+                    var user = _httpContextAccessor.HttpContext?.User;
+                    var userIdStr = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user?.FindFirst("UserId")?.Value;
+                    Guid.TryParse(userIdStr, out var uid);
+
+                    await _auditLogService.LogAsync(
+                        action: "TaskAssigned",
+                        entityType: "TaskItem",
+                        entityId: entity.Id.ToString(),
+                        details: $"Task {entity.Id} assigned to user {userId}.",
+                        userId: uid,
+                        userEmail: user?.FindFirst(ClaimTypes.Email)?.Value,
+                        userName: user?.Identity?.Name,
+                        ipAddress: _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString());
+                }
+                catch { }
+            }
+
+            return res;
         }
     }
 }

@@ -127,6 +127,16 @@ namespace TaskMnagementBackend.Infrastructure.Services
                     .Include(c => c.Teams.Where(t => !t.IsDeleted))
                         .ThenInclude(t => t.TaskItems)
                     .FirstOrDefaultAsync(c => c.Id == companyId.Value && !c.IsDeleted, cancellationToken);
+
+                if (company == null)
+                    throw new Exception("Company not found.");
+
+                // Check ownership or admin rights
+                var requestingUser = await _userManager.FindByIdAsync(userId.ToString());
+                var isAdmin = requestingUser != null && (await _userManager.IsInRoleAsync(requestingUser, UserRoles.Admin) || await _userManager.IsInRoleAsync(requestingUser, UserRoles.SuperAdmin));
+
+                if (!isAdmin && company.OwnerId != userId)
+                    throw new UnauthorizedAccessException("Bu şirkətin məlumatlarına giriş icazəniz yoxdur.");
             }
             else
             {

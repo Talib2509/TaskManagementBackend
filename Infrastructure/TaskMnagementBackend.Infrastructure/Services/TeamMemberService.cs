@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 using TaskMnagementBackend.Aplication.Abstraction.Services;
 using TaskMnagementBackend.Aplication.DTOs.TeamMember;
 using TaskMnagementBackend.Aplication.IUnitOfWork;
@@ -10,10 +12,14 @@ namespace TaskMnagementBackend.Infrastructure.Services
     public class TeamMemberService : ITeamMemberService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IAuditLogService _auditLogService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public TeamMemberService(IUnitOfWork unitOfWork)
+        public TeamMemberService(IUnitOfWork unitOfWork, IAuditLogService auditLogService, IHttpContextAccessor httpContextAccessor)
         {
             _unitOfWork = unitOfWork;
+            _auditLogService = auditLogService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public IQueryable<TeamMemberDto> GetAll()
@@ -149,6 +155,23 @@ namespace TaskMnagementBackend.Infrastructure.Services
             _unitOfWork.TeamMemberWriteRepository.Delete(member);
 
             await _unitOfWork.SaveChangesAsync();
+            try
+            {
+                var user = _httpContextAccessor.HttpContext?.User;
+                var userIdStr = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user?.FindFirst("UserId")?.Value;
+                Guid.TryParse(userIdStr, out var uid);
+
+                await _auditLogService.LogAsync(
+                    action: "TeamMemberRemoved",
+                    entityType: "TeamMember",
+                    entityId: member.Id.ToString(),
+                    details: $"User {member.UserId} was removed from team {member.TeamId}.",
+                    userId: uid,
+                    userEmail: user?.FindFirst(ClaimTypes.Email)?.Value,
+                    userName: user?.Identity?.Name,
+                    ipAddress: _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString());
+            }
+            catch { }
 
             return new RemoveTeamMemberResultDto
             {
@@ -170,7 +193,30 @@ namespace TaskMnagementBackend.Infrastructure.Services
 
             _unitOfWork.TeamMemberWriteRepository.Update(member);
 
-            return await _unitOfWork.SaveChangesAsync() > 0;
+            var res = await _unitOfWork.SaveChangesAsync() > 0;
+
+            if (res)
+            {
+                try
+                {
+                    var user = _httpContextAccessor.HttpContext?.User;
+                    var userIdStr = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user?.FindFirst("UserId")?.Value;
+                    Guid.TryParse(userIdStr, out var uid);
+
+                    await _auditLogService.LogAsync(
+                        action: "TeamMemberRoleChanged",
+                        entityType: "TeamMember",
+                        entityId: member.Id.ToString(),
+                        details: $"Team member {member.UserId} role changed to {role} in team {member.TeamId}.",
+                        userId: uid,
+                        userEmail: user?.FindFirst(ClaimTypes.Email)?.Value,
+                        userName: user?.Identity?.Name,
+                        ipAddress: _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString());
+                }
+                catch { }
+            }
+
+            return res;
         }
     }
 }

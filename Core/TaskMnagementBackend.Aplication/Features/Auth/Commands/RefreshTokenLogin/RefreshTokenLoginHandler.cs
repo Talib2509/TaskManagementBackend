@@ -44,6 +44,16 @@ namespace TaskMnagementBackend.Aplication.Features.Auth.Commands.RefreshTokenLog
                 };
             }
 
+            // Prevent refresh login for deleted or deactivated accounts
+            if (!user.IsActive || user.IsDeleted)
+            {
+                return new RefreshTokenLoginResponse
+                {
+                    Succeeded = false,
+                    Message = "Hesab deaktiv edilib."
+                };
+            }
+
             if (user.RefreshTokenEndDate is null ||
                 user.RefreshTokenEndDate <= DateTime.UtcNow)
             {

@@ -104,9 +104,7 @@ namespace TaskMnagementBackend.Infrastructure.Services
             if (string.IsNullOrWhiteSpace(value))
                 throw new Exception($"{key} tapılmadı.");
 
-            var envValue =
-                Environment.GetEnvironmentVariable(value) ??
-                _configuration[value];
+            var envValue = _configuration[value];
 
             var result = string.IsNullOrWhiteSpace(envValue)
                 ? value
@@ -114,7 +112,7 @@ namespace TaskMnagementBackend.Infrastructure.Services
 
             if (result == value && value.StartsWith("GOOGLE_"))
             {
-                throw new Exception($"{value} üçün real dəyər .env faylından oxunmadı. .env faylının yerini yoxla.");
+                throw new InvalidOperationException($"{value} üçün configuration dəyəri tapılmadı.");
             }
 
             return result;

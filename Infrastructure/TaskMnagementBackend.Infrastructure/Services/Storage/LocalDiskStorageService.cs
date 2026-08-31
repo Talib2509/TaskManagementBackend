@@ -1,7 +1,5 @@
 ﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Processing;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -62,25 +60,6 @@ namespace TaskMnagementBackend.Infrastructure.Services.Storage
             }
 
             string? thumbnailPath = null;
-
-            if (extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".webp")
-            {
-                string thumbFileName = $"thumb_{uniqueFileName}";
-                string thumbFullPath = Path.Combine(uploadPath, thumbFileName);
-
-                file.OpenReadStream().Position = 0;
-
-                using var image = await Image.LoadAsync(file.OpenReadStream());
-                image.Mutate(x => x.Resize(new ResizeOptions
-                {
-                    Size = new Size(200, 200),
-                    Mode = ResizeMode.Max
-                }));
-
-                await image.SaveAsync(thumbFullPath);
-                thumbnailPath = Path.Combine("uploads", subFolder, thumbFileName).Replace("\\", "/");
-            }
-
             string originalPath = Path.Combine("uploads", subFolder, uniqueFileName).Replace("\\", "/");
             return (originalPath, thumbnailPath);
         }

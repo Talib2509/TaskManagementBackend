@@ -1,38 +1,29 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
 
-  <ItemGroup>
+	<ItemGroup>
 
-    <Compile Remove="Features\Auth\Queries\**" />
-    <EmbeddedResource Remove="Features\Auth\Queries\**" />
-    <None Remove="Features\Auth\Queries\**" />
+		<Compile Remove="Features\Auth\Queries\**" />
+		<EmbeddedResource Remove="Features\Auth\Queries\**" />
+		<None Remove="Features\Auth\Queries\**" />
 
-    <Folder Include="Features\Auth\Queries\" />
+		<Folder Include="Features\Auth\Queries\" />
 
-  </ItemGroup>
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="ClosedXML" Version="0.105.1" />
-    <PackageReference Include="MediatR" Version="14.2.0" />
+	<ItemGroup>
+		<PackageReference Include="MediatR" Version="14.2.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Http" Version="2.3.12" />
+		<PackageReference Include="Microsoft.AspNetCore.Http.Features" Version="5.0.17" />
+	</ItemGroup>
 
-    <PackageReference Include="Microsoft.AspNetCore.Http.Features" Version="5.0.17" />
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Common" Version="10.0.10" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="2.1.9" />
-
-    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.11" />
-
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\TaskMnagementBackend.Domain\TaskMnagementBackend.Domain.csproj" />
-  </ItemGroup>
-
-	
-
+	<ItemGroup>
+		<ProjectReference Include="..\TaskMnagementBackend.Domain\TaskMnagementBackend.Domain.csproj" />
+	</ItemGroup>
 
 </Project>

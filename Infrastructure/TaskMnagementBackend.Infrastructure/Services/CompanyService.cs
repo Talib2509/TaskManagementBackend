@@ -1,4 +1,6 @@
 using System.Linq;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 using TaskMnagementBackend.Aplication.Abstraction.Services;
 using TaskMnagementBackend.Aplication.DTOs.Company;
 using TaskMnagementBackend.Aplication.IUnitOfWork;
@@ -9,10 +11,14 @@ namespace TaskMnagementBackend.Infrastructure.Services
     public class CompanyService : ICompanyService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IAuditLogService _auditLogService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public CompanyService(IUnitOfWork unitOfWork)
+        public CompanyService(IUnitOfWork unitOfWork, IAuditLogService auditLogService, IHttpContextAccessor httpContextAccessor)
         {
             _unitOfWork = unitOfWork;
+            _auditLogService = auditLogService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public IQueryable<CompanyDto> GetAll()
@@ -128,6 +134,25 @@ namespace TaskMnagementBackend.Infrastructure.Services
                 await _unitOfWork.SaveChangesAsync();
 
                 await _unitOfWork.CommitAsync();
+
+                // Audit log
+                try
+                {
+                    var user = _httpContextAccessor.HttpContext?.User;
+                    var userIdStr = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user?.FindFirst("UserId")?.Value;
+                    Guid.TryParse(userIdStr, out var uid);
+
+                    await _auditLogService.LogAsync(
+                        action: "CompanyDeleted",
+                        entityType: "Company",
+                        entityId: entity.Id.ToString(),
+                        details: $"Company '{entity.Name}' ({entity.Id}) was soft-deleted.",
+                        userId: uid,
+                        userEmail: user?.FindFirst(ClaimTypes.Email)?.Value,
+                        userName: user?.Identity?.Name,
+                        ipAddress: _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString());
+                }
+                catch { }
 
                 return true;
             }
